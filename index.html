@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buku Tamu - SIBUTAMU</title>
+  <style>
+    /* DESIGN SYSTEM: Glassmorphism, Verdana, Colors */
+    :root {
+      --primary: #005FAC;
+      --accent: #FAB715;
+      --secondary: #00B5E2;
+      --dark: #000000;
+      --light: #FFFFFF;
+    }
+    
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Verdana', sans-serif;
+      background: url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80') no-repeat center center fixed;
+      background-size: cover;
+      color: var(--dark);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* Glass Background Overlay */
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(135deg, rgba(0,95,172,0.6), rgba(0,181,226,0.6));
+      z-index: -1;
+    }
+
+    .glass-container {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 20px;
+      padding: 30px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    h2 {
+      text-align: center;
+      color: var(--light);
+      margin-top: 0;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 10px;
+    }
+
+    .form-group { margin-bottom: 15px; }
+    label {
+      display: block;
+      color: var(--light);
+      font-weight: bold;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-family: 'Verdana', sans-serif;
+      background: rgba(255,255,255,0.9);
+    }
+
+    /* Camera Section */
+    .camera-wrapper {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    #videoElement {
+      width: 100%;
+      border-radius: 8px;
+      background: var(--dark);
+      display: none;
+    }
+    #canvasElement { display: none; }
+    .btn-camera {
+      background: var(--secondary);
+      color: var(--light);
+      border: none;
+      padding: 10px;
+      width: 100%;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    
+    .btn-submit {
+      background: var(--accent);
+      color: var(--dark);
+      border: none;
+      padding: 15px;
+      width: 100%;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+      transition: transform 0.2s;
+    }
+    .btn-submit:hover:not(:disabled) { transform: scale(1.02); }
+    .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+
+    /* Floating Success Card */
+    #successCard {
+      display: none;
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 95, 172, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      text-align: center;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: var(--light);
+      padding: 20px;
+      box-sizing: border-box;
+      z-index: 10;
+    }
+    #successCard h3 { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <div class="glass-container">
+    <h2>Registrasi Buku Tamu</h2>
+    
+    <form id="guestForm">
+      <div class="form-group">
+        <label>Nama Lengkap</label>
+        <input type="text" id="nama" required placeholder="Masukkan nama Anda">
+      </div>
+      <div class="form-group">
+        <label>Alamat</label>
+        <input type="text" id="alamat" required placeholder="Domisili saat ini">
+      </div>
+      <div class="form-group">
+        <label>Asal Instansi</label>
+        <input type="text" id="instansi" required placeholder="Nama instansi/perusahaan">
+      </div>
+      <div class="form-group">
+        <label>Kepentingan</label>
+        <select id="kepentingan" required>
+          <option value="" disabled selected>Pilih Layanan</option>
+          <option value="Layanan Revisi">Layanan Revisi</option>
+          <option value="Layanan Akuntansi">Layanan Akuntansi</option>
+          <option value="Layanan Konsultasi">Layanan Konsultasi</option>
+          <option value="Bertemu Pimpinan">Bertemu Pimpinan</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+      </div>
+
+      <div class="camera-wrapper">
+        <button type="button" class="btn-camera" id="startCameraBtn">Buka Kamera</button>
+        <video id="videoElement" autoplay playsinline></video>
+        <canvas id="canvasElement"></canvas>
+        <button type="button" class="btn-camera" id="captureBtn" style="display:none; background:var(--primary);">Ambil Foto</button>
+        <p id="photoStatus" style="color:var(--light); font-size:12px; display:none;">✅ Foto berhasil ditangkap!</p>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">Masuk</button>
+    </form>
+
+    <!-- Success Overlay Card -->
+    <div id="successCard">
+      <h2>Terima kasih, selamat datang.</h2>
+      <h3>Pesan Integritas:</h3>
+      <p>Semua Layanan Pada Kantor Ini Berbiaya <strong>Rp0,-</strong></p>
+      <button class="btn-camera" style="margin-top:20px; width:auto;" onclick="location.reload()">Isi Form Baru</button>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * SIBUTAMU FRONTEND LOGIC (Pure Vanilla JS)
+     * Replace GAS_WEB_APP_URL with your actual Apps Script deployment URL
+     */
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyp_vcDTgAXutp_KXKTlovM2N8rIuy2nkhf8VPdXHdM4DBntMJ5yjEYUOC6IgplTJYn/exec"; 
+
+    // Camera variables
+    const video = document.getElementById('videoElement');
+    const canvas = document.getElementById('canvasElement');
+    const startCameraBtn = document.getElementById('startCameraBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    let capturedPhotoBase64 = null;
+    let streamRef = null;
+
+    // 1. Initialize WebRTC Camera
+    startCameraBtn.addEventListener('click', async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        video.srcObject = stream;
+        video.style.display = 'block';
+        startCameraBtn.style.display = 'none';
+        captureBtn.style.display = 'inline-block';
+        streamRef = stream;
+      } catch (err) {
+        alert("Gagal mengakses kamera. Pastikan izin diberikan.");
+      }
+    });
+
+    // 2. Capture Frame to Canvas
+    captureBtn.addEventListener('click', () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Convert to Base64 JPEG
+      capturedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.8);
+      
+      // Stop Camera
+      streamRef.getTracks().forEach(track => track.stop());
+      video.style.display = 'none';
+      captureBtn.style.display = 'none';
+      document.getElementById('photoStatus').style.display = 'block';
+    });
+
+    // 3. Handle Form Submission & Fetch to API
+    document.getElementById('guestForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (!capturedPhotoBase64) {
+        alert("Mohon ambil foto wajah terlebih dahulu.");
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Mengirim...";
+
+      const payload = {
+        nama: document.getElementById('nama').value,
+        alamat: document.getElementById('alamat').value,
+        instansi: document.getElementById('instansi').value,
+        kepentingan: document.getElementById('kepentingan').value,
+        fotoBase64: capturedPhotoBase64
+      };
+
+      try {
+        // We use text/plain to bypass CORS preflight OPTIONS request in GAS
+        const response = await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          document.getElementById('successCard').style.display = 'flex';
+        } else {
+          alert("Gagal: " + result.message);
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Kirim Data";
+        }
+      } catch (error) {
+        alert("Terjadi kesalahan jaringan.");
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Kirim Data";
+      }
+    });
+  </script>
+</body>
+</html>
